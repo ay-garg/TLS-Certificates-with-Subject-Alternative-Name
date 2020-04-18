@@ -15,7 +15,19 @@ e is 65537 (0x10001)
 [root@ayush certs]# ls
 ca.crt  ca.key  server.key
 
---> Create an extension file containing the required Subject Alternative Names.
+--> Create an extension file containing the required Subject Alternative Names. More options can be used as per requirements.
+########################################################################
+#  keyUsage               = critical,digitalSignature,keyEncipherment  #
+#  extendedKeyUsage       = serverAuth                                 #
+#  basicConstraints       = critical,CA:false                          #
+#  subjectKeyIdentifier   = hash                                       #
+#  authorityKeyIdentifier = keyid                                      #
+#  subjectAltName         = @alt_names                                 #
+#                                                                      #
+#  [ alt_names ]                                                       #
+#  DNS.1 = example.com                                                 #
+#  IP.1  = 127.0.0.1                                                   #
+########################################################################
 
 [root@ayush certs]# cat alt_names.ext 
 subjectAltName = @alt_names
