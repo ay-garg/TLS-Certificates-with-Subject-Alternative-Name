@@ -18,7 +18,7 @@ ca.crt  ca.key  server.key
 --> Create an extension file containing the required Subject Alternative Names. More options can be used as per requirements.
 ###################################################################################################
 #  keyUsage               = critical,digitalSignature,keyEncipherment,keyCertSign,nonRepudiation  #
-#  extendedKeyUsage       = serverAuth                                                            #
+#  extendedKeyUsage       = serverAuth,clientAuth                                                 #
 #  basicConstraints       = critical,CA:false                                                     #
 #  subjectKeyIdentifier   = hash                                                                  #
 #  authorityKeyIdentifier = keyid                                                                 #
