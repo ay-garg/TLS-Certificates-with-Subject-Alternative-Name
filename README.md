@@ -2,12 +2,130 @@
 ## Generate TLS certificates with openssl command containing the Subject Alternative Name and signed by existing CA authority
 
 ## The CA certificate and key file must be present.
-`[root@ayush certs]# ls`
-`ca.crt  ca.key`
+```
+[root@ayush certs]# ls
+ca.crt  ca.key
+```
 
 ## Genereate a new private key.
-`[root@ayush certs]# openssl genrsa -out server.key 2048`
-`Generating RSA private key, 2048 bit long modulus`
-`...+++`
-`...........................................................+++`
-`e is 65537 (0x10001)`
+```
+[root@ayush certs]# openssl genrsa -out server.key 2048
+Generating RSA private key, 2048 bit long modulus
+...+++
+...........................................................+++
+e is 65537 (0x10001)
+
+
+[root@ayush certs]# ls
+ca.crt  ca.key  server.key
+```
+
+## Create an extension file containing the required Subject Alternative Names. More options can be used as per requirements.
+```
+###################################################################################################
+#  keyUsage               = critical,digitalSignature,keyEncipherment,keyCertSign,nonRepudiation  #
+#  extendedKeyUsage       = serverAuth,clientAuth                                                 #
+#  basicConstraints       = critical,CA:false                                                     #
+#  subjectKeyIdentifier   = hash                                                                  #
+#  authorityKeyIdentifier = keyid                                                                 #
+#  subjectAltName         = @alt_names                                                            #
+#                                                                                                 #
+#  [ alt_names ]                                                                                  #
+#  DNS.1 = example.com                                                                            #
+#  IP.1  = 127.0.0.1                                                                              #
+###################################################################################################
+
+[root@ayush certs]# cat alt_names.ext 
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = server-extra.example.com
+DNS.2 = *.example.com
+DNS.3 = new.example.com
+IP.1 = 10.0.0.1
+IP.2 = 127.0.0.1
+
+
+[root@ayush certs]# ls
+alt_names.ext  ca.crt  ca.key   server.key
+```
+
+## Generate a new CSR from the newly created private key. If the country, organization, etc needs to be added then the format will be:
+```
+-subj "/C=IN/ST=Rajasthan/L=Kota/O=Private CA/OU=Self Signed/CN=server.example.com"
+##################################
+#   C  --> Country               #
+#   ST --> State                 #
+#   L  --> Locality              #
+#   O  --> Organization          #
+#   OU --> Organizational Unit   #
+#   CN --> Common Name           #
+##################################
+
+[root@ayush certs]# openssl req -new -key server.key -subj "/CN=server.example.com" -out server.csr
+```
+
+## Generate the certificate by signing it with existing CA certificate and key and specifying the extension file.
+```
+[root@ayush certs]# openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365 -sha256 -extfile alt_names.ext
+Signature ok
+subject=/CN=server.example.com
+Getting CA Private Key
+
+--> Verify the new certificate by decoding it with openssl command.
+
+[root@ayush certs]# openssl x509 -in server.crt -text -noout
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            dc:75:ae:75:ac:06:f0:bd
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=rootCA
+        Validity
+            Not Before: Apr 18 15:40:35 2020 GMT
+            Not After : Apr 18 15:40:35 2021 GMT
+        Subject: CN=server.example.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:b6:90:1d:77:2b:81:9a:89:68:a0:16:4c:13:59:
+                    8f:33:8a:e1:1c:6d:bf:b7:15:b1:2b:0f:45:22:f9:
+                    bb:94:f4:53:b0:ee:df:69:70:99:f5:5b:a2:b0:d1:
+                    b1:2e:45:eb:51:d9:69:e4:53:5d:78:37:ac:56:33:
+                    71:d2:04:11:31:5b:a5:b5:d5:1d:da:1d:b0:91:ae:
+                    02:7b:76:e1:28:28:e8:68:27:f4:b9:24:df:b5:3c:
+                    25:3e:df:c2:27:eb:74:73:0d:7b:ed:e8:3c:7a:71:
+                    27:d2:77:44:6a:71:41:4a:4a:b6:29:e6:a1:cb:cc:
+                    72:e9:73:42:f0:f1:d3:73:d4:92:54:b9:f6:36:e2:
+                    d7:81:eb:32:4e:ea:82:c7:4a:43:81:bd:11:24:51:
+                    3a:16:d9:5d:c5:09:f1:80:13:9b:f6:88:cb:7a:8f:
+                    11:8d:18:17:11:b1:8c:70:6a:5f:e8:0e:41:d1:ff:
+                    58:8a:3c:27:5e:36:17:f1:0f:3d:ed:8e:54:a4:5f:
+                    90:f2:23:a0:cf:49:b9:35:a1:0a:ea:59:62:f3:07:
+                    a7:f9:ca:37:2f:11:ae:31:35:1f:7a:67:9b:ee:3a:
+                    3c:80:42:48:da:58:ff:85:5f:6b:24:6f:a0:d4:d9:
+                    8f:5d:01:69:1d:00:8d:18:d7:61:07:d5:ca:11:43:
+                    7a:c5
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: 
+                DNS:server-extra.example.com, DNS:*.example.com, DNS:new.example.com, IP Address:10.0.0.1, IP Address:127.0.0.1
+    Signature Algorithm: sha256WithRSAEncryption
+         9f:ea:83:7c:84:0d:ef:18:67:6b:40:cf:d6:5c:7b:94:38:71:
+         f1:57:e9:dd:4c:f0:5e:0d:84:78:c8:ab:0f:eb:57:9e:bb:6d:
+         4c:ac:66:a2:51:aa:e5:c5:9e:c6:8a:21:12:88:b7:88:15:a0:
+         18:2d:e8:58:a9:57:c8:20:cf:ac:7f:72:62:22:06:32:3a:c5:
+         42:3a:9f:81:b7:d3:d4:2f:6c:28:f7:61:84:4e:d7:aa:c8:0e:
+         83:ea:df:3c:f8:3e:8d:47:97:68:9a:49:23:b6:ff:d1:c6:8a:
+         c9:1d:3c:ea:1c:a7:d5:36:06:5b:6a:48:ba:15:f0:bb:97:13:
+         95:ad:1d:b2:16:cd:09:e3:11:d5:49:03:c3:37:b3:b4:50:81:
+         a9:ad:a1:96:a5:eb:15:1e:a9:f3:72:36:60:54:68:fa:3f:92:
+         38:e8:65:ea:1f:3d:25:5d:c9:e2:f1:b6:cd:b2:cf:67:35:0f:
+         20:24:f8:b4:c6:e0:67:4c:26:60:33:ed:25:79:cc:81:73:75:
+         e6:9f:92:1f:04:55:08:a5:b9:5c:fc:d0:32:88:86:b4:e3:3d:
+         b8:92:eb:7e:3f:de:0d:d3:da:7f:b4:56:d9:04:6d:74:f9:60:
+         97:23:80:56:d3:1a:78:db:d3:43:54:ee:ff:a1:5b:d2:68:f0:
+         fe:4c:54:75
+```
