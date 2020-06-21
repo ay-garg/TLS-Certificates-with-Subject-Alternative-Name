@@ -71,9 +71,10 @@ alt_names.ext  ca.crt  ca.key   server.key
 Signature ok
 subject=/CN=server.example.com
 Getting CA Private Key
+```
 
---> Verify the new certificate by decoding it with openssl command.
-
+## Verify the new certificate by decoding it with openssl command.
+```
 [root@ayush certs]# openssl x509 -in server.crt -text -noout
 Certificate:
     Data:
