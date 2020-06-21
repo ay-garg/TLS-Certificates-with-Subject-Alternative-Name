@@ -1,5 +1,4 @@
-## TLS-Certificates-with-Subject-Alternative-Name
-## Generate TLS certificates with openssl command containing the Subject Alternative Name and signed by existing CA authority
+# Generate TLS certificates with openssl command containing the Subject Alternative Name and signed by existing CA authority
 
 ## The CA certificate and key file must be present.
 ```
